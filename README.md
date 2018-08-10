@@ -1,5 +1,5 @@
-# OperativeSystemsClass
-All code for my Operative Systems class is in this repo.
+# Operating Systems Class
+All code for my Operating Systems class is in this repo.
 
 # How to build and run
 All code in here is programmed in C, preferably use GCC compiler to build.
