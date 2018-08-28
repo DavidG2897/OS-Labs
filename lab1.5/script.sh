@@ -1,4 +1,3 @@
-cd
 #!/bin/bash
 
 D='/usr/src'
