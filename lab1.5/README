@@ -1,0 +1,7 @@
+This file is a bash script.
+
+To make it executable issue the command 
+  > chmod +x <filename>
+  
+Once it is executable, execute it with:
+  > ./<filename>
