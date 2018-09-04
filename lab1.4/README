@@ -1,0 +1,14 @@
+Simple kernel module that generate a data strucute called "Student"
+And prints the current students to kernel message
+
+To make, issue the command:
+  > make
+In the directory which holds the Makefile
+Once it is made, issue the command:
+  > sudo insmod <module_name>.ko
+
+To view printed message issue the command:
+  > dmesg
+ 
+To remove module from kernel issue the command:
+  > sudo rmmod <module_name>.ko
