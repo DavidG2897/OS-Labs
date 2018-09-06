@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#define TIME_SLICE 10
+#define TIME_SLICE 15
 #define TASKS_LIMIT 10
 
 char first=-1,finish=0;
@@ -29,6 +29,30 @@ void run(void){
 		cnt++;
 	}while(i++<tasks[first].burst_time-1);
 	tasks[first].state=IDLE;
+}
+
+void RR_run(){
+	unsigned char size;
+	tasks[first].wait_time=cnt;
+	printf("Running Task ID: %d ACTIVATION_TIME: %d BURST_TIME:%d WAIT_TIME: %d\n",tasks[first].id,tasks[first].activation_time,tasks[first].burst_time,tasks[first].wait_time);
+	unsigned char i=0,timeout=0;
+	static unsigned char n;
+	do{
+		if(i==tasks[first].burst_time) break;
+		cnt++;
+	}while(i++<TIME_SLICE-1);
+	if(i==TIME_SLICE){
+		tasks[first].burst_time-=TIME_SLICE;
+		tasks[first].state=READY;
+		Task tmp=tasks[first];
+		for(i=first;i<TASKS_LIMIT;i++){
+			tasks[i]=tasks[i+1];
+			size=i;
+		}
+		tasks[TASKS_LIMIT-1]=tmp;	
+	}else{
+		tasks[first].state=IDLE;	
+	}
 }
 
 void sort(Task list[],unsigned char size,unsigned char policy){
@@ -67,6 +91,12 @@ void sort(Task list[],unsigned char size,unsigned char policy){
 					}
 					break;
 				case 4:
+					if(list[j].activation_time<list[j-1].activation_time){
+						greater=list[j-1];
+						lesser=list[j];
+						list[j]=greater;
+						list[j-1]=lesser;
+					}
 					break;
 				default:
 					break;
@@ -78,7 +108,7 @@ void sort(Task list[],unsigned char size,unsigned char policy){
 void fcfs(void){
 	unsigned char i;
 	static unsigned char sorted;
-	first=-1;//Assume first task in sorted array is in READY state
+	first=-1;//Assume no task running
 	sort(tasks,TASKS_LIMIT,1);
 	if(!sorted){
 		printf("-------------------FCFS Scheduling-------------------------\n");
@@ -95,7 +125,7 @@ void fcfs(void){
 	}
 	printf("-----------------------------------------------------------\n");	
 	if(first<0){
-		printf("No more tasks to run...finishing");
+		printf("No more tasks to run...finishing\n");
 		finish=1;
 	}else{
 		tasks[first].state=RUN;
@@ -106,7 +136,7 @@ void fcfs(void){
 void priority_scheduling(void){
 	unsigned char i;
 	static unsigned char sorted;
-	first=-1;//Assume first task in sorted array is in READY state
+	first=-1;//Assume no task running
 	sort(tasks,TASKS_LIMIT,3);
 	if(!sorted){
 		printf("-------------------Priority Scheduling-------------------------\n");
@@ -115,7 +145,7 @@ void priority_scheduling(void){
 		}
 		sorted=1;	
 	}
-	for(i=TASKS_LIMIT;i>=0;i--){
+	for(i=TASKS_LIMIT-1;i>0;i--){
 		if(tasks[i].state==READY){//Already sorted by piority, first READY task is selected to RUN
 			first=i;
 			break;	
@@ -123,7 +153,7 @@ void priority_scheduling(void){
 	}
 	printf("---------------------------------------------------------------\n");
 	if(first<0){
-		printf("No more tasks to run...finishing");
+		printf("No more tasks to run...finishing\n");
 		finish=1;
 	}else{
 		tasks[first].state=RUN;
@@ -134,7 +164,7 @@ void priority_scheduling(void){
 void sjf(void){
 	unsigned char i;
 	static unsigned char sorted;
-	first=0;//Assume first task in sorted array is in READY state
+	first=-1;//Assume no task running
 	sort(tasks,TASKS_LIMIT,2);
 	if(!sorted){
 		printf("-------------------SJF Scheduling-------------------------\n");
@@ -143,7 +173,7 @@ void sjf(void){
 		}
 		sorted=1;	
 	}
-	for(i=TASKS_LIMIT;i>=0;i--){
+	for(i=TASKS_LIMIT-1;i>0;i--){
 		if(tasks[i].state==READY){//Already sorted by burst time, first READY task is selected to RUN
 			first=i;
 			break;	
@@ -151,7 +181,7 @@ void sjf(void){
 	}
 	printf("----------------------------------------------------------\n");
 	if(first<0){
-		printf("No more tasks to run...finishing");
+		printf("No more tasks to run...finishing\n");
 		finish=1;
 	}else{
 		tasks[first].state=RUN;
@@ -159,49 +189,47 @@ void sjf(void){
 	}
 }
 
-void init_tasks(unsigned char policy){
+void round_robin(void){
 	unsigned char i;
-	switch(policy){
-		case 1:
-			for(i=0;i<TASKS_LIMIT;i++){
-				tasks[i].id=i;
-				tasks[i].state=(rand() % 2); //Randomize autostart
-				tasks[i].wait_time=0;
-				if(!tasks[i].state){
-					tasks[i].activation_time=0;
-				}else{
-					tasks[i].activation_time=(rand() % 10000);					
-				}
-				tasks[i].burst_time=(rand() % 50)+1;
-			}
-			break;
-		case 2:
-			for(i=0;i<TASKS_LIMIT;i++){
-				tasks[i].id=i;
-				tasks[i].burst_time=(rand() % 50)+1;
-				tasks[i].wait_time=0;
-				tasks[i].state=(rand() % 2); //Randomize autostart
-			}
-			break;
-		case 3:
-			for(i=0;i<TASKS_LIMIT;i++){
-				tasks[i].id=i;
-				tasks[i].priority=(rand() % 50);
-				tasks[i].burst_time=(rand() % 50)+1;
-				tasks[i].wait_time=0;
-				tasks[i].state=(rand() % 2); //Randomize autostart
-			}
-			break;
-		case 4:
-			for(i=0;i<TASKS_LIMIT;i++){
-				tasks[i].id=i;
-				tasks[i].burst_time=(rand() % 50)+1;
-				tasks[i].wait_time=0;
-				tasks[i].state=(rand() % 2); //Randomize autostart
-			}
-			break;
-		default:
-			break;
+	static unsigned char sorted,flag;
+	first=-1;//Assume no task running
+	if(!sorted){
+		sort(tasks,TASKS_LIMIT,4);
+		printf("-------------------Round-robin Scheduling-------------------------\n");
+		for(i=0;i<TASKS_LIMIT;i++){
+			printf("Task ID: %d ACTIVATION_TIME: %d STATE: %s BURST_TIME: %d\n",tasks[i].id,tasks[i].activation_time,(!tasks[i].state) ? "IDLE" : "READY",tasks[i].burst_time);
+		}
+		sorted=1;
+	}
+	printf("--------------------------------------------------------------------------\n");
+	for(i=0;i<TASKS_LIMIT;i++){
+		if(tasks[i].state==READY){
+			first=i;
+			break;		
+		}
+	}
+	if(first<0){
+		printf("No more tasks to run...finishing\n");
+		finish=1;
+	}else{
+		tasks[first].state=RUN;
+		RR_run();
+	}
+}
+
+void init_tasks(void){
+	unsigned char i;
+	for(i=0;i<TASKS_LIMIT;i++){
+		tasks[i].id=i;
+		tasks[i].burst_time=(rand() % 50)+1;
+		tasks[i].priority=(rand() % 50);
+		tasks[i].wait_time=0;
+		tasks[i].state=(rand() % 2); //Randomize autostart
+		if(!tasks[i].state){
+			tasks[i].activation_time=0;
+		}else{
+			tasks[i].activation_time=(rand() % 10000);					
+		}
 	}
 }
 
@@ -212,24 +240,22 @@ int main(void){
 		char select;
 		printf("Select scheduling policy:\n1) FCFS\n2) SJF\n3) Priority scheduling\n4) Round-robin scheduling\n> ");
 		scanf("%c",&select);
+		init_tasks();
 		switch(select){
 			case '1':
-				init_tasks(1);
 				while(!finish) fcfs();
 				run=0;
 				break;
 			case '2':
-				init_tasks(2);
 				while(!finish) sjf();
 				run=0;
 				break;
 			case '3':
-				init_tasks(3);
 				while(!finish) priority_scheduling();
 				run=0;
 				break;
 			case '4':
-				init_tasks(4);
+				while(!finish) round_robin();
 				run=0;
 				break;
 			default:
