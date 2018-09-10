@@ -1,8 +1,6 @@
 #include <pthread.h>
 #include <stdio.h>
 
-int x,main_thread=0;
-
 typedef struct{
 	long id;
 	int iteration;
