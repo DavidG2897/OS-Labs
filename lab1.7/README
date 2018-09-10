@@ -1,0 +1,7 @@
+This code simulates four different scheduling algorithms
+  1)FCFS
+  2)SJF
+  3)Priority scheduling
+  4)Round-Robin scheduling
+
+Compilation and execution instructions can be found in main README file.
