@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
-#define LINE 10	//Maximum number of characters per line of file
-#define PATH_MAT_A "matA.dat"
-#define PATH_MAT_B "matB.dat"
+#define MAT_A "./matA.dat"
+#define MAT_B "./matB.dat"
 #define ROW_SIZE  2000
 #define COLUMN_SIZE 2000
 #define MATRIX_SIZE COLUMN_SIZE*ROW_SIZE
@@ -20,8 +20,8 @@ long *multiply(long *matA,long *matB);
 int saveResultMatrix(long *result);
 
 /*  Globals  */
-long *result,**buffers,NUM_BUFFERS;	//temporal matrix declaration, allocation done when read requested
-
+long *result,*row_buff,*column_buff,**buffers,NUM_BUFFERS,n;	//temporal matrix declaration, allocation done when read requested
+pthread_mutex_t *mutexes;		//Mutexes array
 
 long *readMatrix(char *filename){
 	FILE *file;
@@ -33,28 +33,32 @@ long *readMatrix(char *filename){
 }
 
 long *getRow(int row, long *matrix){
-	/*
-	* Need to add mutexes so that getRow fetches available buffer and returns data stored in said buffer
-	* Also so it locks it before writing to it an releases it after write has finished
-	*/
 	unsigned long i;	
 	unsigned long index=ROW_SIZE*row;	//Range from 0 to 1999
 	for(i=0;i<ROW_SIZE;i++){
-		buffers[0][i]=matrix[index++];
-	}	
-	return buffers[0];
+		row_buff[i]=matrix[index++];
+	}
+	return row_buff;
 }
 
 long *getColumn(int column, long *matrix){
-	return 0;	
+	unsigned long i;
+	
+	return column_buff;	
 }
 
 int getLock(void){
-	return 0;
+	n=0;
+	do{
+		if(0==pthread_mutex_trylock(&mutexes[n])) break;
+	}while(n++<NUM_BUFFERS-1);
+	return n;
 }
 
 int releaseLock(int lock){
-	return 0;
+	int result;
+	if(0==pthread_mutex_unlock(&mutexes[lock])){result=0;}else{result=-1;}
+	return result;
 }
 
 long dotProduct(long *vec1,long *vec2){
@@ -62,6 +66,8 @@ long dotProduct(long *vec1,long *vec2){
 }
 
 long *multiply(long *matA,long *matB){
+	int lock=getLock();
+	releaseLock(lock);
 	return 0;
 }
 
@@ -70,9 +76,13 @@ int saveResultMatrix(long *result){
 }
 
 int main(void){
-	unsigned long i;//,j;
-	long *matA,*matB,*rowA1;
+	unsigned long i;
+	long *matA,*matB,*rowA1,*rowB0;
+	matA=malloc(MATRIX_SIZE*sizeof(long));
+	matB=malloc(MATRIX_SIZE*sizeof(long));
 	result=malloc(MATRIX_SIZE*sizeof(long));
+	row_buff=malloc(ROW_SIZE*sizeof(long));
+	column_buff=malloc(COLUMN_SIZE*sizeof(long));
 	printf("Input desired number of buffers: ");
 	fflush(stdout);
 	scanf("%d",&NUM_BUFFERS);
@@ -85,11 +95,16 @@ int main(void){
 	for(i=0;i<NUM_BUFFERS;i++){
 		buffers[i]=malloc(ROW_SIZE*sizeof(long));
 	}
+	/*
+	Mutexes are related one on one with buffers (buffers[0] is associated with mutex[0] and so on)
+	*/
+	mutexes=malloc(NUM_BUFFERS*sizeof(pthread_mutex_t)); 
 
-	matA=readMatrix(PATH_MAT_A);
-	matB=readMatrix(PATH_MAT_B);
-	
+	memcpy(matA,readMatrix(MAT_A),MATRIX_SIZE*sizeof(long));
+	memcpy(matB,readMatrix(MAT_B),MATRIX_SIZE*sizeof(long));
+
 	rowA1=getRow(1,matA);
+	rowB0=getRow(0,matB);
 	return 0;
 }
 
