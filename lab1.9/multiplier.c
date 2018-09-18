@@ -26,7 +26,6 @@ long *result,**buffers,NUM_BUFFERS;	//temporal matrix declaration, allocation do
 long *readMatrix(char *filename){
 	FILE *file;
 	unsigned long i=0;
-	result=malloc(MATRIX_SIZE*sizeof(long));
 	file = fopen(filename,"r");	//Open file passed as argument in READ mode
 	while(fscanf(file,"%ld",&result[i++]) != EOF);
 	fclose(file);
@@ -71,15 +70,16 @@ int saveResultMatrix(long *result){
 }
 
 int main(void){
-	unsigned long i,j;
+	unsigned long i;//,j;
 	long *matA,*matB,*rowA1;
+	result=malloc(MATRIX_SIZE*sizeof(long));
 	printf("Input desired number of buffers: ");
 	fflush(stdout);
 	scanf("%d",&NUM_BUFFERS);
-
-	/* 	Buffers init
-		First dimension of buffers 2D array size is allocated as NUM_BUFFERS long arrays
-		Second dimension of buffers 2D array size is allocated as ROW_SIZE sized long arrays
+	/*
+ 	Buffers init
+	First dimension of buffers 2D array size is allocated as NUM_BUFFERS long arrays
+	Second dimension of buffers 2D array size is allocated as ROW_SIZE sized long arrays
 	*/
 	buffers=malloc(NUM_BUFFERS*sizeof(long*)); 
 	for(i=0;i<NUM_BUFFERS;i++){
@@ -90,7 +90,6 @@ int main(void){
 	matB=readMatrix(PATH_MAT_B);
 	
 	rowA1=getRow(1,matA);
-
 	return 0;
 }
 
