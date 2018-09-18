@@ -32,9 +32,7 @@ main(int argc, char *argv[])
 			printf("PTHREAD_SCOPE_SYSTEM\n");
 		else 
 			fprintf(stderr,"Illegal scope value.\n");
-	}		
-
-	main_thread++; //main thread is created at this time	
+	}			
 	
 	if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) != 0)
 		printf("unable to set scheduling policy.\n");
