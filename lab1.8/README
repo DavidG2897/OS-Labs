@@ -1,3 +1,3 @@
-To compile follow main README instructions, add parameter -pthread.
+To compile and execute follow main README instructions, add parameter -pthread.
 Example
 	gcc main.c -o main.o -pthread
