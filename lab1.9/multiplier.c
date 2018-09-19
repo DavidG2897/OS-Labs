@@ -7,6 +7,7 @@
 #define MAT_B "./matB.dat"
 #define ROW_SIZE  2000
 #define COLUMN_SIZE 2000
+#define MAX_THREADS 10
 #define MATRIX_SIZE COLUMN_SIZE*ROW_SIZE
 
 /*  Prototypes  */
@@ -16,12 +17,17 @@ long *getRow(int row,long *matrix);
 int getLock(void);
 int releaseLock(int lock);
 long dotProduct(long *vec1,long *vec2);
-long *multiply(long *matA,long *matB);
+long *multiply(void *params);
 int saveResultMatrix(long *result);
 
 /*  Globals  */
 long *result,*row_buff,*column_buff,**buffers,NUM_BUFFERS;
 pthread_mutex_t *mutexes;
+typedef struct{
+	long *matA;
+	long *matB;
+	unsigned long n;
+} args;
 
 long *readMatrix(char *filename){
 	FILE *file;
@@ -66,12 +72,17 @@ long dotProduct(long *vec1,long *vec2){
 	return result;
 }
 
-long *multiply(long *matA,long *matB){
-	int lock=getLock();
+long *multiply(void *params){
+	args *input=params;
+	int lock,i;
+	while(-1==(lock=getLock()));
+	/*params->n++;
+	for(i=0;i<ROW_SIZE;i++){
+		buffers[lock][i]=dotProduct();
+	}*/
 	printf("%d\n",lock);
-	long *rowA=getRow(0,matA);
 	releaseLock(lock);
-	return 0;
+	pthread_exit(0);
 }
 
 int saveResultMatrix(long *result){
@@ -79,9 +90,14 @@ int saveResultMatrix(long *result){
 }
 
 int main(void){
-	unsigned long i;
+	unsigned long i=0;
 	long *matA,*matB,*row1,*column1;
+	pthread_attr_t attr;
+	pthread_t *threads;
+	args parameters;
+
 	/*  Memory allocations  */
+	threads=malloc(MAX_THREADS*sizeof(pthread_t));	//One thread per column
 	matA=malloc(MATRIX_SIZE*sizeof(long));
 	matB=malloc(MATRIX_SIZE*sizeof(long));
 	row1=malloc(ROW_SIZE*sizeof(long));
@@ -89,6 +105,8 @@ int main(void){
 	result=malloc(MATRIX_SIZE*sizeof(long));
 	row_buff=malloc(ROW_SIZE*sizeof(long));
 	column_buff=malloc(COLUMN_SIZE*sizeof(long));
+
+	pthread_attr_init(&attr);		//Default thread attributes
 
 	printf("Input desired number of buffers: ");
 	fflush(stdout);
@@ -107,9 +125,36 @@ int main(void){
 	Mutexes are related one on one with buffers (buffers[0] is associated with mutex[0] and so on)
 	*/
 	mutexes=malloc(NUM_BUFFERS*sizeof(pthread_mutex_t)); 
+	
+	//Temporal matrix fill
+	unsigned long j;
+	for(j=0;j<MATRIX_SIZE;j++){
+		matA[j]=1;
+	}
+	for(j=0;j<MATRIX_SIZE;j++){
+		matB[j]=2;
+	}
+	//
 
-	memcpy(matA,readMatrix(MAT_A),MATRIX_SIZE*sizeof(long));
-	memcpy(matB,readMatrix(MAT_B),MATRIX_SIZE*sizeof(long));
+	//memcpy(matA,readMatrix(MAT_A),MATRIX_SIZE*sizeof(long));
+	//memcpy(matB,readMatrix(MAT_B),MATRIX_SIZE*sizeof(long));
+
+	/*memcpy(row1,getRow(0,matA),ROW_SIZE*sizeof(long));
+	memcpy(column1,getColumn(0,matB),COLUMN_SIZE*sizeof(long));*/
+
+	parameters.matA=matA;	
+	parameters.matB=matB;	
+
+	do{
+		for(j=0;j<MAX_THREADS;j++){			//One thread per column, MAX_THREADS at a time
+			pthread_create(&threads[j],&attr,multiply,(void *) &parameters);
+		}
+
+		for(j=0;j<MAX_THREADS;j++){
+			pthread_join(threads[j],NULL);		//Join all threads		
+		}
+
+	}while(i++<COLUMN_SIZE/MAX_THREADS);
 
 	//Free allocated memory
 	free(mutexes);
