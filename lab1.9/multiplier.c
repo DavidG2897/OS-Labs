@@ -20,8 +20,8 @@ long *multiply(long *matA,long *matB);
 int saveResultMatrix(long *result);
 
 /*  Globals  */
-long *result,*row_buff,*column_buff,**buffers,NUM_BUFFERS,n;	//temporal matrix declaration, allocation done when read requested
-pthread_mutex_t *mutexes;		//Mutexes array
+long *result,*row_buff,*column_buff,**buffers,NUM_BUFFERS;
+pthread_mutex_t *mutexes;
 
 long *readMatrix(char *filename){
 	FILE *file;
@@ -35,24 +35,22 @@ long *readMatrix(char *filename){
 long *getRow(int row, long *matrix){
 	unsigned long i;	
 	unsigned long index=ROW_SIZE*row;	//Range from 0 to 1999
-	for(i=0;i<ROW_SIZE;i++){
-		row_buff[i]=matrix[index++];
-	}
+	for(i=0;i<ROW_SIZE;i++) row_buff[i]=matrix[index++];
 	return row_buff;
 }
 
 long *getColumn(int column, long *matrix){
 	unsigned long i;
-	
-	return column_buff;	
+	for(i=0;i<COLUMN_SIZE;i++) column_buff[i]=matrix[i*COLUMN_SIZE+column];
+	return column_buff;
 }
 
 int getLock(void){
-	n=0;
+	int i=0;
 	do{
-		if(0==pthread_mutex_trylock(&mutexes[n])) break;
-	}while(n++<NUM_BUFFERS-1);
-	return n;
+		if(0==pthread_mutex_trylock(&mutexes[i])) return i;
+	}while(i++<NUM_BUFFERS-1);
+	return -1;
 }
 
 int releaseLock(int lock){
@@ -62,11 +60,16 @@ int releaseLock(int lock){
 }
 
 long dotProduct(long *vec1,long *vec2){
-	return 0;
+	long result=0;
+	unsigned long i;
+	for(i=0;i<ROW_SIZE;i++) result+=vec1[i]*vec2[i];
+	return result;
 }
 
 long *multiply(long *matA,long *matB){
 	int lock=getLock();
+	printf("%d\n",lock);
+	long *rowA=getRow(0,matA);
 	releaseLock(lock);
 	return 0;
 }
@@ -77,15 +80,20 @@ int saveResultMatrix(long *result){
 
 int main(void){
 	unsigned long i;
-	long *matA,*matB,*rowA1,*rowB0;
+	long *matA,*matB,*row1,*column1;
+	/*  Memory allocations  */
 	matA=malloc(MATRIX_SIZE*sizeof(long));
 	matB=malloc(MATRIX_SIZE*sizeof(long));
+	row1=malloc(ROW_SIZE*sizeof(long));
+	column1=malloc(COLUMN_SIZE*sizeof(long));
 	result=malloc(MATRIX_SIZE*sizeof(long));
 	row_buff=malloc(ROW_SIZE*sizeof(long));
 	column_buff=malloc(COLUMN_SIZE*sizeof(long));
+
 	printf("Input desired number of buffers: ");
 	fflush(stdout);
 	scanf("%d",&NUM_BUFFERS);
+
 	/*
  	Buffers init
 	First dimension of buffers 2D array size is allocated as NUM_BUFFERS long arrays
@@ -103,8 +111,13 @@ int main(void){
 	memcpy(matA,readMatrix(MAT_A),MATRIX_SIZE*sizeof(long));
 	memcpy(matB,readMatrix(MAT_B),MATRIX_SIZE*sizeof(long));
 
-	rowA1=getRow(1,matA);
-	rowB0=getRow(0,matB);
+	//Free allocated memory
+	free(mutexes);
+	free(matA);
+	free(matB);
+	free(result);
+	free(row_buff);
+	free(column_buff);
 	return 0;
 }
 
