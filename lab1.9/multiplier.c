@@ -8,7 +8,6 @@
 #define MAT_B "./matB.dat"
 #define ROW_SIZE  2000
 #define COLUMN_SIZE 2000
-#define MAX_THREADS 20
 #define MATRIX_SIZE COLUMN_SIZE*ROW_SIZE
 
 /*  Prototypes  */
@@ -23,9 +22,10 @@ int saveResultMatrix(long *result);
 void *thread_runner(void *params);
 
 /*  Globals  */
-long *result,**buffers,*row_buff,*column_buff,NUM_BUFFERS;
+long *result,**buffers,*row_buff,*column_buff,NUM_BUFFERS,row_count=-1;
 pthread_mutex_t *mutexes;
-pthread_t threads[MAX_THREADS];
+pthread_mutex_t row_mutex;
+pthread_t *threads;
 typedef struct{
 	long *matA,*matB;
 } args;
@@ -80,17 +80,17 @@ long *multiply(long *matA,long *matB){
 	unsigned long i,j=0,n=0;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
+	if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) != 0) printf("unable to set scheduling policy.\n");
 	parameters.matA=matA;
 	parameters.matB=matB;
 	do{	
-		for(i=0;i<MAX_THREADS;i++){	
-			pthread_create(&threads[i],&attr,thread_runner,(void *) n);
-			n++;
+		for(i=0;i<NUM_BUFFERS;i++){
+			pthread_create(&threads[i],&attr,thread_runner,NULL);
 		}
-		for(i=0;i<MAX_THREADS;i++){
+		for(i=0;i<NUM_BUFFERS;i++){
 			pthread_join(threads[i],NULL);
 		}
-	}while(j++<(ROW_SIZE/MAX_THREADS)-1);
+	}while(j++<(ROW_SIZE/NUM_BUFFERS)-1);
 	return result;
 }
 
@@ -98,28 +98,34 @@ void *thread_runner(void *params){
 	int lock;
 	unsigned long i;
 	long *row,*column;
-	unsigned long n=(unsigned long)params;
-	while(-1==(lock=getLock()));	//Wait for a mutex to be unlocked
-	printf("n: %ld lock: %ld\n",n,lock);
+	while(-1==(lock=getLock()));	//Wait for a buffer to be unlocked
+	pthread_mutex_lock(&row_mutex);
+	row_count++;
 	row=malloc(ROW_SIZE*sizeof(long));
 	column=malloc(COLUMN_SIZE*sizeof(long));
-	memcpy(row,getRow(n,parameters.matA),ROW_SIZE*sizeof(long));
+	memcpy(row,getRow(row_count,parameters.matA),ROW_SIZE*sizeof(long));
 	for(i=0;i<COLUMN_SIZE;i++){
 		memcpy(column,getColumn(i,parameters.matB),ROW_SIZE*sizeof(long));
-		if(n==i) printf("n: %ld %ld\n",n,dotProduct(row,column));
+		//if(n==i) printf("n: %ld %ld\n",n,dotProduct(row,column));
 		buffers[lock][i]=dotProduct(row,column);
-		if(n==i) printf("n: %ld %ld\n",n,buffers[lock][i]);
+		//if(n==i) printf("n: %ld %ld\n",n,buffers[lock][i]);
 	}
 	for(i=0;i<COLUMN_SIZE;i++){
-		result[n*ROW_SIZE+i]=buffers[lock][i];
+		result[row_count*ROW_SIZE+i]=buffers[lock][i];
+		printf("res[%ld][%ld] = %ld\n",row_count,i,result[row_count*ROW_SIZE+i]);	
 	}
 	free(row);
 	free(column);
+	pthread_mutex_unlock(&row_mutex);
 	releaseLock(lock);
 	pthread_exit(0);
 }
 
-int saveResultMatrix(long *result){
+int saveResultMatrix(long *res){
+	int i;
+	FILE *f=fopen("result.dat","w");
+	for(i=0;i<MATRIX_SIZE;i++) fprintf(f,"%ld\n",res[i]);
+	fclose(f);	
 	return 0;
 }
 
@@ -135,6 +141,7 @@ int main(void){
 	result=malloc(MATRIX_SIZE*sizeof(long));
 	row_buff=malloc(ROW_SIZE*sizeof(long));
 	column_buff=malloc(COLUMN_SIZE*sizeof(long));
+	threads=malloc(NUM_BUFFERS*sizeof(pthread_t));
 
 	printf("Input desired number of buffers: ");
 	fflush(stdout);
@@ -172,7 +179,6 @@ int main(void){
 	
 	memcpy(row_buff,getRow(0,matA),ROW_SIZE*sizeof(long));
 	memcpy(column_buff,getColumn(0,matB),COLUMN_SIZE*sizeof(long));
-
 	printf("%ld\n",dotProduct(row_buff,column_buff));
 	*/
 
@@ -180,16 +186,18 @@ int main(void){
 	
 	//unsigned long j;
 	//for(j=0;j<MATRIX_SIZE;j++){
-	printf("%ld\n",res[0]);
+	saveResultMatrix(res);
 	//}
 	//Free allocated memory
 	free(mutexes);
 	free(matA);
 	free(matB);
 	free(result);
+	free(res);
+	free(buffers);
+	free(mutexes);
 	free(row_buff);
 	free(column_buff);
+	free(threads);
 	return 0;
 }
-
-
