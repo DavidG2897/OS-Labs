@@ -146,6 +146,7 @@ int main(void){
 	printf("Input desired number of buffers: ");
 	fflush(stdout);
 	scanf("%d",&NUM_BUFFERS);
+	if(NUM_BUFFERS>=4) NUM_BUFFERS=4;
 
 	/*
  	Buffers init
