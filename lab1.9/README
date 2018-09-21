@@ -1,0 +1,10 @@
+To compile and execute this laboratory code use the main README instructions, add -pthread parameter.
+
+Example:
+	To compile:
+	> gcc multiplier.c -o multiplier.o -pthread
+
+	To execute:
+	> ./multiplier.o
+
+Buffers are limited to 4, even if the user provides more.
