@@ -83,7 +83,7 @@ long *multiply(long *matA,long *matB){
 	if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) != 0) printf("unable to set scheduling policy.\n");
 	parameters.matA=matA;
 	parameters.matB=matB;
-	do{	
+	do{
 		for(i=0;i<NUM_BUFFERS;i++){
 			pthread_create(&threads[i],&attr,thread_runner,NULL);
 		}
@@ -106,13 +106,10 @@ void *thread_runner(void *params){
 	memcpy(row,getRow(row_count,parameters.matA),ROW_SIZE*sizeof(long));
 	for(i=0;i<COLUMN_SIZE;i++){
 		memcpy(column,getColumn(i,parameters.matB),ROW_SIZE*sizeof(long));
-		//if(n==i) printf("n: %ld %ld\n",n,dotProduct(row,column));
 		buffers[lock][i]=dotProduct(row,column);
-		//if(n==i) printf("n: %ld %ld\n",n,buffers[lock][i]);
 	}
 	for(i=0;i<COLUMN_SIZE;i++){
 		result[row_count*ROW_SIZE+i]=buffers[lock][i];
-		printf("res[%ld][%ld] = %ld\n",row_count,i,result[row_count*ROW_SIZE+i]);	
 	}
 	free(row);
 	free(column);
@@ -146,6 +143,7 @@ int main(void){
 	printf("Input desired number of buffers: ");
 	fflush(stdout);
 	scanf("%d",&NUM_BUFFERS);
+
 	if(NUM_BUFFERS>=4) NUM_BUFFERS=4;
 
 	/*
@@ -177,14 +175,14 @@ int main(void){
 	/*
 	printf("%ld\n",matA[0]);
 	printf("%ld\n",matB[0]);
-	
+
 	memcpy(row_buff,getRow(0,matA),ROW_SIZE*sizeof(long));
 	memcpy(column_buff,getColumn(0,matB),COLUMN_SIZE*sizeof(long));
 	printf("%ld\n",dotProduct(row_buff,column_buff));
 	*/
 
 	memcpy(res,multiply(matA,matB),MATRIX_SIZE*sizeof(long));
-	
+
 	//unsigned long j;
 	//for(j=0;j<MATRIX_SIZE;j++){
 	saveResultMatrix(res);
