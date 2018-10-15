@@ -5,7 +5,7 @@ Ramón Eduardo Gradilla Negrete
 
 To compile and execute this laboratory exercise, follow main README instructions but add -pthread switch.
 Command to compile:
-	gcc -main.c -o-main.o -pthread
+	gcc -main.c -o -main.o -pthread
 
 Command to execute
 	./main.o
