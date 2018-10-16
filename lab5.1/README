@@ -1,0 +1,4 @@
+No need to compile, use commands:
+  > make          This command executes first target of the Makefile
+  > make clean    This command executes clean target of the Makefile
+  > make all      This command executes all target of the Makefile
