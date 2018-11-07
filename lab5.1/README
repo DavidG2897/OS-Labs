@@ -1,0 +1,50 @@
+No need to compile, use commands:
+  > make          This command executes first target of the Makefile
+  > make clean    This command executes clean target of the Makefile
+  > make all      This command executes all target of the Makefile
+
+Summary:
+Managing Memory
+On all computer systems memory is a scarce resource.
+Linux provides protection so that different applications are protected from each other, and it allows applications
+to apparently access more memory than is physically present in the machine, provided the machine is at least well
+configured and has sufficient swap space.
+
+Simple Memory Allocation
+This is a malloc function in C.
+The malloc function is guaranteed to return memory that is aligned so that it can be cast to a pointer of any type.
+
+Allocating Lots of Memory
+Linux exceed the limitations of the MS-DOS memory model.
+This is done by looping and asking for more memory while doing so, until it reaches the very last byte of the available
+memory of the machine.
+
+Available Memory
+This is managed by the kernel, if there is memory available it simply allocates as the application requests, but once it reaches
+the limit of available physical memory for the program requesting memory, it start using a disk space called swap space, which
+is allocated at installation of the system. If the application exhausts both physical memory and the swap space or the stack space
+exceeded (overflow) the kernel refuses to allocate more memory and can even terminate the program.
+
+Abusing Memory
+This happens when a program tries to access a space in memory which is not allocated for it, the Linux memory management system
+protects other programs by terminating the program which tried such access.
+
+The Null Pointer
+Modern Linux systems are very protective about writing or reading from the address referred to by a null pointer, although
+the actual behavior is implementation specific.
+
+Freeing Memory
+The Linux memory management system is quite capable of reliably ensuring that memory is returned to the system
+when a program ends. Programs that use memory on a dynamic basis should always release unused memory back to the malloc
+memory manager using the free call. This enables separate blocks to be remerged and enables the malloc library to look
+after memory, rather than have the application manage it.
+
+Other Memory Allocation Functions
+Calloc:
+It allocates memory for an array of structures and requires the number of elements and the size of each element
+as its parameters. The allocated memory is filled with zeros; and if calloc is successful, a pointer to the first element
+is returned.
+
+Realloc:
+It’s passed a pointer to some memory previously allocated by malloc, calloc, or realloc and resizes it up or down as requested.
+The realloc function may have to move data around to achieve this
