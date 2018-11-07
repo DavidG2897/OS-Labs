@@ -2,18 +2,32 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define NUM_ADDR 1000	/* Number of addresses in file */
+#define NUM_ADDR 1000				/* Number of addresses in file */
+#define TLB_SIZE 16				/* TLB entries */
+#define PAGE_TABLE_SIZE 256			/* Number of pages */
+#define PAGE_SIZE 256				/* Page size in bytes */
+#define FRAME_SIZE 256				/* Frame size in bytes */
+#define NUM_FRAMES 256				/* Number of frames */
+#define PHY_MEM_SIZE FRAME_SIZE*NUM_FRAMES	/* Physical memory size in bytes */
+
+/* Datatypes */
+typedef union{
+	unsigned char bytes[4];		/* Byte 0: offset, Byte 1: page number, last two bytes are not used */
+	unsigned short word[2];
+	unsigned long dword;
+} Address;
 
 /* Globals */
-unsigned long addrs[NUM_ADDR];
+Address addresses[NUM_ADDR];
 FILE *addr_file;
 FILE *disk_file;
 
 /* Prototypes */
-void read_addr_file(FILE *file, unsigned long *target);
+void read_addr_file(FILE *file, Address *target);
 
 int main(int argc, char *argv[]){
-	unsigned short i;
+
+	unsigned short i,k;
 
 	if(argc != 2){
 		printf("Error: executable needs at least one input file\n");
@@ -21,12 +35,17 @@ int main(int argc, char *argv[]){
 	}
 	
 	addr_file = fopen(argv[1], "r");
-	disk_file = fopen("./BACKING_STORE.bin","rw");
+	disk_file = fopen("./BACKING_STORE.bin","r");
 
-	read_addr_file(addr_file,addrs);
-	
+	read_addr_file(addr_file,addresses);
+
+
 	for(i=0;i<NUM_ADDR;i++){
-		printf("Address %d: %ld\n",i,addrs[i]);
+		printf("Address %ld: %x \n\t",i,addresses[i].dword);
+		for(k=1;k!=65535;k--){
+			printf("%s: %x ",(k==0) ? "Offset" : "Page",addresses[i].bytes[k]);
+		}
+		printf("\n");
 	}
 
 	fclose(addr_file);
@@ -36,7 +55,7 @@ int main(int argc, char *argv[]){
 
 }
 
-void read_addr_file(FILE *file,unsigned long *target){
+void read_addr_file(FILE *file, Address *target){
 	unsigned long k = 0;
-	while(fscanf(file,"%ld",&target[k++]) != EOF);
+	while(fscanf(file,"%ld",&target[k++].dword) != EOF);
 }
