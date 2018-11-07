@@ -9,6 +9,9 @@
 #define FRAME_SIZE 256				/* Frame size in bytes */
 #define NUM_FRAMES 256				/* Number of frames */
 #define PHY_MEM_SIZE FRAME_SIZE*NUM_FRAMES	/* Physical memory size in bytes */
+#define READ_FILE(a,b) k = 0; \
+	while(fscanf(a,"%ld",&b[k++].dword) != EOF); \
+
 
 /* Datatypes */
 typedef union{
@@ -23,11 +26,11 @@ FILE *addr_file;
 FILE *disk_file;
 
 /* Prototypes */
-void read_addr_file(FILE *file, Address *target);
+//No prototypes at the moment
 
 int main(int argc, char *argv[]){
 
-	unsigned short i,k;
+	unsigned short i,k;	/* Only use k to read files with READ_FILE macro! */
 
 	if(argc != 2){
 		printf("Error: executable needs at least one input file\n");
@@ -37,8 +40,7 @@ int main(int argc, char *argv[]){
 	addr_file = fopen(argv[1], "r");
 	disk_file = fopen("./BACKING_STORE.bin","r");
 
-	read_addr_file(addr_file,addresses);
-
+	READ_FILE(addr_file,addresses);
 
 	for(i=0;i<NUM_ADDR;i++){
 		printf("Address %ld: %x \n\t",i,addresses[i].dword);
@@ -55,7 +57,3 @@ int main(int argc, char *argv[]){
 
 }
 
-void read_addr_file(FILE *file, Address *target){
-	unsigned long k = 0;
-	while(fscanf(file,"%ld",&target[k++].dword) != EOF);
-}
