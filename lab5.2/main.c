@@ -15,7 +15,7 @@
 
 /* Datatypes */
 typedef union{
-	unsigned char bytes[4];		/* Byte 0: offset, Byte 1: page number, last two bytes are not used */
+	unsigned char bytes[4];		/* Byte 0: offset, Byte 1: page number, last two bytes are not used (maybe data?) */
 	unsigned short word[2];
 	unsigned long dword;
 } Address;
