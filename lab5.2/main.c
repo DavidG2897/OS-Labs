@@ -10,12 +10,12 @@
 #define NUM_FRAMES 256				/* Number of frames */
 #define PHY_MEM_SIZE FRAME_SIZE*NUM_FRAMES	/* Physical memory size in bytes */
 #define READ_FILE(a,b) k = 0; \
-	while(fscanf(a,"%ld",&b[k++].dword) != EOF); \
+	while(fscanf(a,"%ld",&b[k++].dword) != EOF);
 
 
 /* Datatypes */
 typedef union{
-	unsigned char bytes[4];		/* Byte 0: offset, Byte 1: page number, last two bytes are not used (maybe data?) */
+	unsigned char bytes[4];	/* Byte 0: offset, Byte 1: page number, last two bytes are not used (maybe data?) */
 	unsigned short word[2];
 	unsigned long dword;
 } Address;
@@ -31,6 +31,7 @@ FILE *disk_file;
 int main(int argc, char *argv[]){
 
 	unsigned short i,k;	/* Only use k to read files with READ_FILE macro! */
+	unsigned long str;
 
 	if(argc != 2){
 		printf("Error: executable needs at least one input file\n");
@@ -43,12 +44,16 @@ int main(int argc, char *argv[]){
 	READ_FILE(addr_file,addresses);
 
 	for(i=0;i<NUM_ADDR;i++){
-		printf("Address %ld: %x \n\t",i,addresses[i].dword);
+		printf("Address %ld: %ld (0x0000%x)\n\t",i,addresses[i].dword,addresses[i].dword);
 		for(k=1;k!=65535;k--){
 			printf("%s: %x ",(k==0) ? "Offset" : "Page",addresses[i].bytes[k]);
 		}
 		printf("\n");
 	}
+
+
+	fscanf(disk_file,"%ld",&str);
+	printf("%ld\n",str);
 
 	fclose(addr_file);
 	fclose(disk_file);
