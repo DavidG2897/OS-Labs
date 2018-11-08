@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #define NUM_ADDR 1000				/* Number of addresses in file */
 #define TLB_SIZE 16				/* TLB entries */
@@ -31,7 +30,7 @@ FILE *disk_file;
 int main(int argc, char *argv[]){
 
 	unsigned short i,k;	/* Only use k to read files with READ_FILE macro! */
-	unsigned long str;
+	unsigned char str[80];
 
 	if(argc != 2){
 		printf("Error: executable needs at least one input file\n");
@@ -39,21 +38,31 @@ int main(int argc, char *argv[]){
 	}
 	
 	addr_file = fopen(argv[1], "r");
-	disk_file = fopen("./BACKING_STORE.bin","r");
+	disk_file = fopen("./BACKING_STORE.bin","rb");
+	
+	if(disk_file == NULL){
+		printf("Error reading disk file");
+		return 1;
+	}
 
 	READ_FILE(addr_file,addresses);
 
 	for(i=0;i<NUM_ADDR;i++){
-		printf("Address %ld: %ld (0x0000%x)\n\t",i,addresses[i].dword,addresses[i].dword);
+		printf("Address %ld: %ld (0x0000%X)\n\t",i,addresses[i].dword,addresses[i].dword);
 		for(k=1;k!=65535;k--){
-			printf("%s: %x ",(k==0) ? "Offset" : "Page",addresses[i].bytes[k]);
+			printf("%s: %X ",(k == 0) ? "Offset" : "Page",addresses[i].bytes[k]);
 		}
 		printf("\n");
 	}
 
 
-	fscanf(disk_file,"%ld",&str);
-	printf("%ld\n",str);
+	fseek(disk_file,10*4,SEEK_SET);
+	fread(str,sizeof(str),1,disk_file);
+	for(i=0;i<80;i++){
+		printf("%2X",str[i]);
+	}
+
+	printf("\n");
 
 	fclose(addr_file);
 	fclose(disk_file);
