@@ -1,0 +1,8 @@
+To compile:
+> gcc main.c -o main.o
+
+To execute:
+>./main.o addresses.txt
+
+Execution template
+>./main.o <input_filename>
