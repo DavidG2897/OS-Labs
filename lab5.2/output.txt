@@ -998,3 +998,8 @@ Virtual: 8940	Physical: 46572	Value: 0
 Virtual: 9929	Physical: 44745	Value: 0
 Virtual: 45563	Physical: 46075	Value: 126
 Virtual: 12107	Physical: 2635	Value: -46
+Number of Addresses = 1000
+Number of Page Faults= 244
+Page Fault Rate= 0.244000
+TLB Hits= 55
+TLB Hit Rate= 0.055000

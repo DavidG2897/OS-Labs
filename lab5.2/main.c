@@ -37,6 +37,9 @@ char page_table[PAGE_TABLE_SIZE];
 char mem[NUM_FRAMES][FRAME_SIZE];
 FILE *addr_file;
 FILE *disk_file;
+int Fault_Counter=0;
+int address_Counter=0;
+int tlb_Counter=0;
 
 /* Prototypes */
 void init(void);
@@ -96,6 +99,7 @@ void readAddresses(Address *input, unsigned long num_addr){
 	FILE *output = fopen("./output.txt","w");
 
 	for(i=0;i<num_addr;i++){
+		address_Counter++;
 		page = input[i].bytes[1];
 		offset = input[i].bytes[0];
 		physical_addr.bytes[0] = offset;
@@ -103,6 +107,7 @@ void readAddresses(Address *input, unsigned long num_addr){
 			if(tlb[n].page == page){
 				physical_addr.bytes[1] = tlb[n].frame;
 				tlb_hit = 1;
+				tlb_Counter++;
 			}else{tlb_hit = 0; }
 		}
 
@@ -113,14 +118,20 @@ void readAddresses(Address *input, unsigned long num_addr){
 				UPDATE_TLB(page,current_frame);
 				physical_addr.bytes[1] = current_frame;
 				value = mem[current_frame][offset];
+				Fault_Counter++;
 				current_frame++;
 			}else{
 				physical_addr.bytes[1] = (unsigned char) page_table[page];
 				value = mem[(unsigned char)page_table[page]][offset];
 			}
 		}
-		fprintf(output,"Virtual: %ld\tPhysical: %ld\tValue: %ld\n",input[i].dword,physical_addr.dword,value);
+		fprintf(output,"Virtual: %ld\tPhysical: %ld\tValue: %d\n",input[i].dword,physical_addr.dword,value);
 	}
+	fprintf(output,"Number of Addresses = %d\n",address_Counter);
+	fprintf(output, "Number of Page Faults= %d\n",Fault_Counter);
+	fprintf(output, "Page Fault Rate= %f\n",((Fault_Counter*1.0f)/address_Counter));
+	fprintf(output, "TLB Hits= %d\n",tlb_Counter);
+	fprintf(output, "TLB Hit Rate= %f\n",((tlb_Counter*1.0f)/address_Counter));
 	fclose(output);
 }
 
