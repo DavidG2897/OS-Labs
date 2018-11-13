@@ -1,0 +1,13 @@
+To compile:
+> gcc client1.c -o client1
+> gcc server1.c -o server1
+
+To run and test:
+> ./server1 & (to run server in background)
+> ./client1 <operation> <numbers to operate>
+
+The supported operations are addition (+ character), substraction (- character) and multiplication (x character)
+The numbers to operate have a limit of ten.
+
+Example:
+> ./client1 + 1 2 3 4 5
