@@ -1,0 +1,11 @@
+To compile:
+> gcc <filename>.c -o <output_filename>
+
+To execute:
+     - For server:
+	> ./server3 &
+     - For several clients:
+	> ./client3 <id> & ./client3 <id> & ...
+	Maximum of 5 clients for this server.
+
+
